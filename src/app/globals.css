@@ -1,0 +1,129 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --glass-bg: rgba(255, 255, 255, 0.12);
+    --glass-border: rgba(255, 255, 255, 0.35);
+    --glass-blur: 14px;
+  }
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body {
+    @apply bg-cream font-sans text-ink;
+  }
+
+  ::selection {
+    @apply bg-sage/60 text-ink;
+  }
+
+  /* Visible focus rings everywhere (WCAG) */
+  :focus-visible {
+    outline: 2px solid theme("colors.ink");
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+}
+
+@layer components {
+  /* ── Glassmorphism frame ───────────────────────────────────────────────
+     Glass is used ONLY as a frame: nav, hero card, accents, modals.
+     Commerce surfaces (prices, totals, checkout) are always solid. */
+  .glass {
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.4);
+    border: 1px solid var(--glass-border);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(28, 31, 38, 0.1);
+  }
+
+  /* Frosted light glass for nav / drawers over solid pages */
+  .glass-frost {
+    background: rgba(247, 243, 238, 0.86);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.3);
+    border: 1px solid rgba(28, 31, 38, 0.08);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(28, 31, 38, 0.08);
+  }
+
+  /* Dark glass for panels over imagery */
+  .glass-dark {
+    background: rgba(28, 31, 38, 0.5);
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 18px;
+    box-shadow: 0 8px 32px rgba(28, 31, 38, 0.25);
+    color: theme("colors.cream");
+  }
+
+  .btn-solid {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-ink px-6 py-3 text-sm font-semibold tracking-wide text-cream transition-colors duration-300 ease-soft hover:bg-ink-soft disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-ink/25 bg-transparent px-6 py-3 text-sm font-semibold tracking-wide text-ink transition-colors duration-300 ease-soft hover:border-ink hover:bg-ink hover:text-cream disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-light {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-cream px-6 py-3 text-sm font-semibold tracking-wide text-ink transition-colors duration-300 ease-soft hover:bg-white disabled:opacity-50;
+  }
+
+  .input {
+    @apply block w-full rounded-xl border border-ink/15 bg-white px-4 py-3 text-sm text-ink shadow-sm transition-colors duration-200 placeholder:text-ink-soft/50 focus:border-ink/40 focus:outline-none focus:ring-2 focus:ring-ink/10;
+  }
+
+  .label {
+    @apply mb-1.5 block text-xs font-medium uppercase tracking-wider text-ink-soft;
+  }
+
+  .eyebrow {
+    @apply text-xs font-medium uppercase tracking-[0.25em] text-sage-deep;
+  }
+
+  .section {
+    @apply mx-auto w-full max-w-site px-5 py-16 sm:px-8 md:py-24;
+  }
+
+  .card-solid {
+    @apply rounded-2xl border border-ink/10 bg-white shadow-card transition-all duration-300 ease-soft;
+  }
+}
+
+@layer utilities {
+  /* Limit backdrop-filter layers per view for mobile performance. */
+  .backdrop-safe {
+    contain: paint;
+  }
+
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+/* Khmer script needs a slightly larger, airier line-height. */
+html[lang="km"] body {
+  line-height: 1.75;
+  letter-spacing: 0;
+}
+
+/* Subtle, 300–500ms motion only; honour prefers-reduced-motion. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

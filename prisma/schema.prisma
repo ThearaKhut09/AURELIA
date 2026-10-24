@@ -1,0 +1,198 @@
+// AURELIA — Prisma schema (PostgreSQL)
+// Base prices stored in USD (PayWay settles USD). KHR is display-only.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+// Fulfilment status
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+}
+
+// Payment status
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  phone        String?
+  role         Role      @default(CUSTOMER)
+  addresses    Address[]
+  orders       Order[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+}
+
+model Address {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  label     String?
+  line1     String
+  line2     String?
+  // City, Sangkat / Khan-District (optional, e.g. "Chamkarmon, Phnom Penh")
+  city      String?
+  province  String
+  phone     String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model Product {
+  id            String      @id @default(cuid())
+  slug          String      @unique
+  name          String
+  nameKh        String?
+  description   String
+  ingredients   String
+  howToUse      String
+  // "skincare" | "fragrance" | "rituals"
+  category      String
+  // Comma-separated filter facets, e.g. "dry,oily,sensitive"
+  skinTypes     String      @default("")
+  // e.g. "hydration,brightening,anti-aging"
+  concerns      String      @default("")
+  // JSON array of image URLs (local /products/*.svg or Cloudinary/Blob URLs)
+  images        Json
+  basePriceUsd  Decimal     @db.Decimal(10, 2)
+  compareAtUsd  Decimal?    @db.Decimal(10, 2)
+  stock         Int         @default(0)
+  isActive      Boolean     @default(true)
+  isFeatured    Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  variants      Variant[]
+  orderItems    OrderItem[]
+  reviews       Review[]
+
+  @@index([category, isActive])
+  @@index([isFeatured])
+}
+
+model Variant {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String // e.g. "50 ml"
+  sku       String  @unique
+  priceUsd  Decimal @db.Decimal(10, 2)
+  stock     Int     @default(0)
+  image     String?
+
+  @@index([productId])
+}
+
+model Order {
+  id              String        @id @default(cuid())
+  // Unique transaction id sent to PayWay (idempotency key)
+  tranId          String        @unique
+  userId          String?
+  user            User?         @relation(fields: [userId], references: [id])
+  status          OrderStatus   @default(PENDING)
+  paymentStatus   PaymentStatus @default(PENDING)
+  subtotalUsd     Decimal       @db.Decimal(10, 2)
+  shippingUsd     Decimal       @db.Decimal(10, 2)
+  vatUsd          Decimal       @db.Decimal(10, 2)
+  totalUsd        Decimal       @db.Decimal(10, 2)
+  // Frozen display string at purchase time, e.g. "៛204,600"
+  totalKhrDisplay String
+  // "payway" | "demo"
+  paymentMethod   String        @default("payway")
+  // abapay_khqr | cards | (blank = customer chose on PayWay page)
+  paymentOption   String?
+  paywayTranId    String?
+  contactName     String
+  contactEmail    String
+  contactPhone    String
+  shippingAddress Json
+  notes           String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  items           OrderItem[]
+  payments        Payment[]
+
+  @@index([userId])
+  @@index([status, paymentStatus])
+  @@index([createdAt])
+}
+
+model OrderItem {
+  id          String   @id @default(cuid())
+  orderId     String
+  order       Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  variantId   String?
+  name        String
+  variantName String?
+  priceUsd    Decimal  @db.Decimal(10, 2)
+  quantity    Int
+  image       String?
+
+  @@index([orderId])
+  @@index([productId])
+}
+
+model Payment {
+  id         String   @id @default(cuid())
+  orderId    String
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  // "payway" | "demo"
+  provider   String
+  tranId     String
+  amountUsd  Decimal  @db.Decimal(10, 2)
+  currency   String   @default("USD")
+  // PENDING | APPROVED | DECLINED | CANCELLED
+  status     String   @default("PENDING")
+  apv        String?
+  rawResponse Json?
+  createdAt  DateTime @default(now())
+
+  @@index([orderId])
+  @@index([tranId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author    String
+  rating    Int // 1..5
+  comment   String
+  isApproved Boolean @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([productId])
+}
+
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
